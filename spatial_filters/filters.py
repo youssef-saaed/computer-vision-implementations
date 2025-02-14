@@ -1,5 +1,13 @@
-from .utils import * 
 import numpy as np
+import cv2
+
+def __get_image(image_path: str) -> np.ndarray:
+    image = cv2.imread(image_path)
+    return image.astype(int)
+
+def __save_image(image: np.ndarray, save_location: str) -> None:
+    image = image.astype(np.uint8)
+    cv2.imwrite(save_location, image)
 
 def negative_filter(image: np.ndarray, *_: None) -> np.ndarray:
     transformed_image = 255 - image
@@ -16,6 +24,6 @@ filter_names = {
 }
 
 def apply_filter(name: str, image_path: str, output_path: str, *args):
-    image = get_image(image_path)
+    image = __get_image(image_path)
     output_image = filter_names[name](image, *args)
-    save_image(output_image, output_path)
+    __save_image(output_image, output_path)
