@@ -29,16 +29,8 @@ def apply_3d_convolution(image: np.ndarray, filter: np.ndarray) -> np.ndarray:
     padding_size = (filter.shape[0] - 1) // 2
     padded_image = add_padding(image, padding_size)
     
-    for i in range(padding_size, padded_image.shape[0] - padding_size):
-        for j in range(padding_size, padded_image.shape[1] - padding_size):
-            window_start_x = j - padding_size
-            window_end_x = j + padding_size + 1
-            window_start_y = i - padding_size
-            window_end_y = i + padding_size + 1
-            
-            window = padded_image[window_start_y : window_end_y, window_start_x : window_end_x]
-            for c in range(padded_image.shape[2]):
-                image[i - padding_size, j - padding_size, c] = np.multiply(window[:, :, c], filter).sum()
+    windows = np.lib.stride_tricks.sliding_window_view(padded_image, filter.shape, axis=(0, 1))
+    image = np.sum(windows * filter, axis=(-1, -2))
     return image
 
 
