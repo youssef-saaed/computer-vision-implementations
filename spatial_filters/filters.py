@@ -70,6 +70,21 @@ def average_filter(image: np.ndarray, kernel_size: Any):
     kernel_size = int(kernel_size)
     filter = np.full((kernel_size, kernel_size), 1 / kernel_size ** 2)
     return apply_3d_convolution(image, filter)
+
+def median_filter(image: np.ndarray, kernel_size: Any):
+    kernel_size = int(kernel_size)
+    if kernel_size % 2 == 0:
+        return image
+    
+    padding_size = (kernel_size - 1) // 2
+    padded_image = add_padding(image, padding_size)
+    
+    windows = np.lib.stride_tricks.sliding_window_view(padded_image, (kernel_size, kernel_size), axis=(0, 1))
+    for i in range(image.shape[0]):
+        for j in range(image.shape[1]):
+            for c in range(image.shape[2]):
+                image[i, j, c] = np.sort(windows[i, j, c].reshape(-1))[padding_size]
+    return image
         
     
     
@@ -78,6 +93,7 @@ filter_names = {
     "gamma": gamma_correction_filter,
     "histeq": histogram_equalizer_filter,
     "average": average_filter,
+    "median": median_filter,
 }
 
 def apply_filter(name: str, image_path: str, output_path: str, *args):
