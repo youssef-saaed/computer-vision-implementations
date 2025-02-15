@@ -3,7 +3,6 @@ from collections import defaultdict
 from typing import Any
 import cv2
 from copy import deepcopy
-import matplotlib.pyplot as plt
 
 def __get_image(image_path: str) -> np.ndarray:
     image = cv2.imread(image_path)
@@ -66,12 +65,12 @@ def histogram_equalizer_filter(image: np.ndarray, alpha: Any = 1) -> np.ndarray:
     
     return (1 - alpha) * image + alpha * equalized_image
 
-def average_filter(image: np.ndarray, kernel_size: Any):
+def average_filter(image: np.ndarray, kernel_size: Any) -> np.ndarray:
     kernel_size = int(kernel_size)
     filter = np.full((kernel_size, kernel_size), 1 / kernel_size ** 2)
     return apply_3d_convolution(image, filter)
 
-def median_filter(image: np.ndarray, kernel_size: Any):
+def median_filter(image: np.ndarray, kernel_size: Any) -> np.ndarray:
     kernel_size = int(kernel_size)
     if kernel_size % 2 == 0:
         return image
@@ -86,6 +85,20 @@ def median_filter(image: np.ndarray, kernel_size: Any):
                 image[i, j, c] = np.sort(windows[i, j, c].reshape(-1))[padding_size]
     return image
         
+def edge_detection_filter(image: np.ndarray,  *_: None) -> np.ndarray:
+    noise_clear_image = median_filter(image, 3)
+    smoothed_image = average_filter(noise_clear_image, 3)
+    smoothed_image = average_filter(smoothed_image, 3)
+    smoothed_image = average_filter(smoothed_image, 3)
+    filter = np.array([
+        [-1, -1, -1],
+        [-1, 8, -1],
+        [-1, -1, -1],
+    ])
+    return apply_3d_convolution(smoothed_image, filter)
+
+def sharpening_filter(image: np.ndarray, intensity: Any = 0.1) -> np.ndarray:
+    return (1 - intensity) * image + intensity * histogram_equalizer_filter(edge_detection_filter(image).clip(0, 255))
     
     
 filter_names = {
@@ -94,6 +107,8 @@ filter_names = {
     "histeq": histogram_equalizer_filter,
     "average": average_filter,
     "median": median_filter,
+    "edge": edge_detection_filter,
+    "sharp": sharpening_filter,
 }
 
 def apply_filter(name: str, image_path: str, output_path: str, *args):
