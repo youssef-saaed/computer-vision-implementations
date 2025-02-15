@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import Any
 import cv2
 from copy import deepcopy
+import matplotlib.pyplot as plt
 
 def __get_image(image_path: str) -> np.ndarray:
     image = cv2.imread(image_path)
@@ -20,6 +21,25 @@ def add_padding(image: np.ndarray, padding_size: int) -> np.ndarray:
     padded_image = np.zeros(padded_image_shape, dtype=int)
     padded_image[padding_size: -padding_size, padding_size: -padding_size, :] = image[:, :, :]
     return padded_image
+
+def apply_3d_convolution(image: np.ndarray, filter: np.ndarray) -> np.ndarray:
+    if filter.shape[0] != filter.shape[1] or filter.shape[0] % 2 == 0:
+        return image
+    
+    padding_size = (filter.shape[0] - 1) // 2
+    padded_image = add_padding(image, padding_size)
+    
+    for i in range(padding_size, padded_image.shape[0] - padding_size):
+        for j in range(padding_size, padded_image.shape[1] - padding_size):
+            window_start_x = j - padding_size
+            window_end_x = j + padding_size + 1
+            window_start_y = i - padding_size
+            window_end_y = i + padding_size + 1
+            
+            window = padded_image[window_start_y : window_end_y, window_start_x : window_end_x]
+            for c in range(padded_image.shape[2]):
+                image[i - padding_size, j - padding_size, c] = np.multiply(window[:, :, c], filter).sum()
+    return image
 
 
 
@@ -53,13 +73,19 @@ def histogram_equalizer_filter(image: np.ndarray, alpha: Any = 1) -> np.ndarray:
         equalized_image[:, :, i] = np.vectorize(lambda val: mapping[i][val])(image[:, :, i])
     
     return (1 - alpha) * image + alpha * equalized_image
-    
+
+def average_filter(image: np.ndarray, kernel_size: Any):
+    kernel_size = int(kernel_size)
+    filter = np.full((kernel_size, kernel_size), 1 / kernel_size ** 2)
+    return apply_3d_convolution(image, filter)
+        
     
     
 filter_names = {
     "negative": negative_filter, 
     "gamma": gamma_correction_filter,
     "histeq": histogram_equalizer_filter,
+    "average": average_filter,
 }
 
 def apply_filter(name: str, image_path: str, output_path: str, *args):
