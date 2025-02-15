@@ -38,6 +38,8 @@ def apply_3d_convolution(image: np.ndarray, filter: np.ndarray) -> np.ndarray:
     image = np.sum(windows * filter, axis=(-1, -2))
     return image
 
+
+
 def negative_filter(image: np.ndarray, *_: None) -> np.ndarray:
     """Apply a negative filter to invert image colors."""
     return 255 - image
@@ -96,15 +98,8 @@ def median_filter(image: np.ndarray, kernel_size: Any) -> np.ndarray:
     return image
 
 def edge_detection_filter(image: np.ndarray, *_: None) -> np.ndarray:
-    """Apply an edge detection filter using a Laplacian kernel."""
-    noise_clear_image = median_filter(image, 3)
-    
-    # Apply multiple passes of average filtering for smoothing
-    smoothed_image = average_filter(noise_clear_image, 3)
-    smoothed_image = average_filter(smoothed_image, 3)
-    smoothed_image = average_filter(smoothed_image, 3)
-    
-    # Laplacian edge detection kernel
+    """Apply edge detection using a Laplacian kernel."""
+    smoothed_image = average_filter(image, 3) 
     filter = np.array([
         [-1, -1, -1],
         [-1,  8, -1],
@@ -112,11 +107,13 @@ def edge_detection_filter(image: np.ndarray, *_: None) -> np.ndarray:
     ])
     return apply_3d_convolution(smoothed_image, filter)
 
-def sharpening_filter(image: np.ndarray, intensity: Any = 0.1) -> np.ndarray:
-    """Enhance image sharpness by combining original and edge-detected images."""
-    edge_detected_image = edge_detection_filter(image).clip(0, 255)
-    equalized_image = histogram_equalizer_filter(edge_detected_image)
-    return (1 - intensity) * image + intensity * equalized_image
+def sharpening_filter(image: np.ndarray, intensity: Any = 0.3) -> np.ndarray:
+    """Apply sharpening by enhancing detected edges."""
+    intensity = float(intensity)
+    edge_image = edge_detection_filter(image).clip(0, 255)  
+    return (image + intensity * edge_image).clip(0, 255) 
+
+
 
 # Dictionary of available filters
 filter_names = {
