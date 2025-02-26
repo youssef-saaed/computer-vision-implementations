@@ -1,4 +1,4 @@
-from spatial_filters import *  # Importing all functions from spatial_filters module
+from filters import *  # Importing all functions from spatial_filters module
 import sys
 import os
 
